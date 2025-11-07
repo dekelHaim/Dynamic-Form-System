@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>יצירת טופס חדש</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="date"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-submit {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-submit:hover {
+            background: #229954;
+        }
+        
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #7f8c8d;
+        }
+        
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .error-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+        
+        .error-list li {
+            padding: 5px 0;
+            padding-right: 20px;
+        }
+        
+        .error-list li::before {
+            content: "❌ ";
+            margin-right: 5px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 יצירת טופס חדש</h1>
+        
+        <div id="successMessage" class="success-message">✅ הטופס נשמר בהצלחה!</div>
+        <div id="errorMessage" class="error-message"></div>
+        
+        <form id="formCreate" onsubmit="submitForm(event)">
+            <!-- Form Configuration Section -->
+            <div class="form-section">
+                <div class="section-title">🔧 הגדרות הטופס</div>
+                
+                <div class="form-group">
+                    <label for="formName" class="required">שם הטופס</label>
+                    <input type="text" id="formName" name="formName" required placeholder="לדוגמה: טופס רישום">
+                </div>
+                
+                <div class="form-group">
+                    <label for="formDescription">תיאור (אופציונלי)</label>
+                    <textarea id="formDescription" name="formDescription" placeholder="תיאור קצר של הטופס"></textarea>
+                </div>
+            </div>
+            
+            <!-- User Details Section - Dynamic Fields -->
+            <div class="form-section">
+                <div class="section-title">👤 פרטי משתמש</div>
+                <div id="userDetailsFields"></div>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="buttons">
+                <button type="submit" class="btn-submit">💾 שמור טופס</button>
+                <button type="button" class="btn-cancel" onclick="goBack()">❌ ביטול</button>
+            </div>
+            
+            <div class="loading" id="loading">⏳ שולח נתונים...</div>
+        </form>
+    </div>
+    
+    <script>
+        // Default schema for new forms
+        const DEFAULT_SCHEMA = {
+            "name": {
+                "type": "string",
+                "required": true,
+                "minLength": 3
+            },
+            "email": {
+                "type": "email",
+                "required": true
+            },
+            "age": {
+                "type": "number",
+                "required": true,
+                "min": 0,
+                "max": 150
+            },
+            "gender": {
+                "type": "dropdown",
+                "options": ["male", "female", "other"],
+                "required": true
+            }
+        };
+        
+        // Render dynamic fields based on schema
+        function renderDynamicFields() {
+            const container = document.getElementById('userDetailsFields');
+            container.innerHTML = '';
+            
+            for (const [fieldName, fieldConfig] of Object.entries(DEFAULT_SCHEMA)) {
+                const fieldLabel = getFieldLabel(fieldName);
+                const required = fieldConfig.required ? ' required' : '';
+                const requiredMark = fieldConfig.required ? '<span class="required"></span>' : '';
+                
+                let fieldHTML = `<div class="form-group">`;
+                fieldHTML += `<label for="${fieldName}">${fieldLabel}${requiredMark}</label>`;
+                
+                switch (fieldConfig.type) {
+                    case 'text':
+                    case 'string':
+                        fieldHTML += `<input type="text" id="${fieldName}" name="${fieldName}" 
+                            ${fieldConfig.minLength ? `minlength="${fieldConfig.minLength}"` : ''}
+                            ${fieldConfig.maxLength ? `maxlength="${fieldConfig.maxLength}"` : ''}
+                            ${required} placeholder="הזן ${fieldLabel}">`;
+                        break;
+                        
+                    case 'email':
+                        fieldHTML += `<input type="email" id="${fieldName}" name="${fieldName}" 
+                            ${required} placeholder="דוגמה@example.com">`;
+                        break;
+                        
+                    case 'number':
+                        fieldHTML += `<input type="number" id="${fieldName}" name="${fieldName}" 
+                            ${fieldConfig.min !== undefined ? `min="${fieldConfig.min}"` : ''}
+                            ${fieldConfig.max !== undefined ? `max="${fieldConfig.max}"` : ''}
+                            ${required} placeholder="הזן מספר">`;
+                        break;
+                        
+                    case 'date':
+                        fieldHTML += `<input type="date" id="${fieldName}" name="${fieldName}" ${required}>`;
+                        break;
+                        
+                    case 'password':
+                        fieldHTML += `<input type="password" id="${fieldName}" name="${fieldName}" 
+                            ${fieldConfig.minLength ? `minlength="${fieldConfig.minLength}"` : ''}
+                            ${required} placeholder="הזן סיסמה">`;
+                        break;
+                        
+                    case 'dropdown':
+                        fieldHTML += `<select id="${fieldName}" name="${fieldName}" ${required}>
+                            <option value="">-- בחר --</option>`;
+                        if (fieldConfig.options) {
+                            fieldConfig.options.forEach(option => {
+                                const optionLabel = getOptionLabel(option);
+                                fieldHTML += `<option value="${option}">${optionLabel}</option>`;
+                            });
+                        }
+                        fieldHTML += `</select>`;
+                        break;
+                }
+                
+                fieldHTML += `</div>`;
+                container.innerHTML += fieldHTML;
+            }
+        }
+        
+        function getFieldLabel(fieldName) {
+            const labels = {
+                'name': '👤 שם',
+                'email': '📧 אימייל',
+                'age': '🎂 גיל',
+                'gender': '⚧️ מין',
+                'phone': '☎️ טלפון',
+                'address': '📍 כתובת'
+            };
+            return labels[fieldName] || fieldName;
+        }
+        
+        function getOptionLabel(option) {
+            const labels = {
+                'male': '🧑 זכר',
+                'female': '👩 נקבה',
+                'other': '⚧️ אחר'
+            };
+            return labels[option] || option;
+        }
+        
+        async function submitForm(e) {
+            e.preventDefault();
+            
+            // Hide messages
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            
+            // Collect form data
+            const formName = document.getElementById('formName').value;
+            const formDescription = document.getElementById('formDescription').value;
+            
+            // Collect user details
+            const userDetails = {};
+            for (const fieldName of Object.keys(DEFAULT_SCHEMA)) {
+                const value = document.getElementById(fieldName).value;
+                if (value) {
+                    // Convert age to number
+                    if (fieldName === 'age') {
+                        userDetails[fieldName] = parseInt(value, 10);
+                    } else {
+                        userDetails[fieldName] = value;
+                    }
+                }
+            }
+            
+            const payload = {
+                "name": formName,
+                "description": formDescription,
+                "schema_definition": DEFAULT_SCHEMA,
+                "user_details": userDetails
+            };
+            
+            try {
+                const response = await fetch('/api/forms/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('formCreate').reset();
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    // Show validation errors
+                    let errorHTML = '<strong>❌ שגיאה בשמירת הטופס:</strong><ul class="error-list">';
+                    
+                    if (data.detail && typeof data.detail === 'object') {
+                        if (data.detail.errors) {
+                            data.detail.errors.forEach(error => {
+                                errorHTML += `<li>${error}</li>`;
+                            });
+                        } else if (data.detail.message) {
+                            errorHTML += `<li>${data.detail.message}</li>`;
+                        }
+                    } else if (typeof data.detail === 'string') {
+                        errorHTML += `<li>${data.detail}</li>`;
+                    } else {
+                        errorHTML += `<li>שגיאה לא ידועה בשמירה</li>`;
+                    }
+                    
+                    errorHTML += '</ul>';
+                    document.getElementById('errorMessage').innerHTML = errorHTML;
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').innerHTML = '<strong>❌ שגיאה בחיבור לשרת</strong>';
+                document.getElementById('errorMessage').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function goBack() {
+            window.location.href = '/';
+        }
+        
+        // Render fields on page load
+        renderDynamicFields();
+    </script>
+</body>
+</html>
