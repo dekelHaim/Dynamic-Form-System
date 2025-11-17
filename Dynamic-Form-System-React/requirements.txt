@@ -1,0 +1,40 @@
+# Core Web Framework
+fastapi==0.110.0
+uvicorn[standard]==0.28.0
+
+# Data Validation
+pydantic==2.8.0
+pydantic[email]==2.8.0
+
+# Request Parsing
+python-multipart==0.0.9
+
+# Database
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.10
+
+# Caching & Session Management
+redis==5.0.1
+
+# Environment & Configuration
+python-dotenv==1.1.0
+
+# HTTP Client
+requests==2.32.0
+
+# Testing
+pytest>=8.2,<9
+pytest-asyncio==0.24.0
+
+# Server
+gunicorn==21.2.0
+uvloop==0.19.0
+
+# CORS & Utilities
+fastapi-cors==0.0.6
+
+# Logging (Optional but recommended)
+python-json-logger==2.0.7
+
+# Type Hints
+typing-extensions==4.9.0
